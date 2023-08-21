@@ -571,6 +571,11 @@ impl TaskPool {
     {
         Self::LOCAL_EXECUTOR.with(f)
     }
+
+    /// Terminate all of this `TaskPool`'s threads. Renders this pool unusable.
+    pub fn terminate_all_threads(&self) {
+        self.shutdown_tx.close();
+    }
 }
 
 impl Default for TaskPool {
