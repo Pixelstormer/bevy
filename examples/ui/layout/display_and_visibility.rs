@@ -260,7 +260,7 @@ fn panels(palette: &[Color; 4]) -> impl Scene {
                         ]
                     ]
                 ]
-            ],
+            ];
 
             #RightPanel
             Node {
@@ -315,7 +315,7 @@ fn panels(palette: &[Color; 4]) -> impl Scene {
                         ]
                     ]
                 ]
-            ],
+            ]
         ]
     }
 }

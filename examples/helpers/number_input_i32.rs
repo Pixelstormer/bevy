@@ -40,7 +40,7 @@ where
                 }
                 Children [
                     @label(name)
-                ],
+                ];
 
                 identifier
                 @FeathersNumberInput
@@ -67,7 +67,7 @@ where
                 }
                 Children [
                     @label(name)
-                ],
+                ];
 
                 @FeathersNumberInput
                 NumberInputValue::I32(value)

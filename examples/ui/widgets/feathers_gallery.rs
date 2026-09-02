@@ -84,7 +84,7 @@ fn main() {
 }
 
 fn scene() -> impl SceneList {
-    bsn_list![Camera2d, @demo_root()]
+    bsn_list![Camera2d; @demo_root()]
 }
 
 fn demo_root() -> Box<dyn Scene> {
@@ -101,8 +101,8 @@ fn demo_root() -> Box<dyn Scene> {
         TabGroup
         ThemeBackgroundColor(tokens::WINDOW_BG)
         Children[
-            @demo_column_1(),
-            @demo_column_2(),
+            @demo_column_1();
+            @demo_column_2();
         ]
     })
 }
@@ -549,11 +549,11 @@ fn demo_column_1() -> impl Scene {
                 column_gap: px(8),
             }
             Children [
-                (@FeathersToggleSwitch on(checkbox_self_update)),
-                (@FeathersToggleSwitch ActivateOnPress on(checkbox_self_update)),
-                (@FeathersToggleSwitch InteractionDisabled on(checkbox_self_update)),
-                (@FeathersToggleSwitch InteractionDisabled Checked on(checkbox_self_update)),
-                (@FeathersDisclosureToggle on(checkbox_self_update)),
+                (@FeathersToggleSwitch on(checkbox_self_update));
+                (@FeathersToggleSwitch ActivateOnPress on(checkbox_self_update));
+                (@FeathersToggleSwitch InteractionDisabled on(checkbox_self_update));
+                (@FeathersToggleSwitch InteractionDisabled Checked on(checkbox_self_update));
+                (@FeathersDisclosureToggle on(checkbox_self_update));
             ]
             ---
             @FeathersSlider {
@@ -650,7 +650,7 @@ fn demo_column_1() -> impl Scene {
                 justify_content: JustifyContent::SpaceBetween,
             }
             Children [
-                @label("Hsl"),
+                @label("Hsl");
                 (@FeathersColorSwatch SwatchType::Hsl)
             ]
             ---
@@ -688,7 +688,7 @@ fn demo_column_1() -> impl Scene {
                 justify_content: JustifyContent::SpaceBetween,
             }
             Children [
-                @label("Okhsl"),
+                @label("Okhsl");
                 (@FeathersColorSwatch SwatchType::Okhsl)
             ]
             ---
@@ -746,30 +746,30 @@ fn demo_column_2() -> impl Scene {
                     @FeathersToolButton {
                         @variant: ButtonVariant::Primary,
                         @caption: bsn! { @caption("\u{0398}") }
-                    },
-                    @pane_header_divider(),
+                    };
+                    @pane_header_divider();
                     @FeathersToolButton {
                         @variant: ButtonVariant::Plain,
                         @caption: bsn! { @caption("\u{00BC}") }
-                    },
+                    };
                     @FeathersToolButton {
                         @variant: ButtonVariant::Plain,
                         @caption: bsn! { @caption("\u{00BD}") }
-                    },
+                    };
                     @FeathersToolButton {
                         @variant: ButtonVariant::Plain,
                         @caption: bsn! { @caption("\u{00BE}") }
-                    },
-                    @pane_header_divider(),
+                    };
+                    @pane_header_divider();
                     @FeathersToolButton {
                         @variant: ButtonVariant::Plain,
                         @caption: bsn! { @icon(icons::CHEVRON_DOWN) }
-                    },
-                    @flex_spacer(),
+                    };
+                    @flex_spacer();
                     @FeathersToolButton {
                         @variant: ButtonVariant::Plain,
                         @caption: bsn! { @icon(icons::X) }
-                    },
+                    };
                 ]
                 ---
                 @pane_body() Children [
@@ -777,8 +777,8 @@ fn demo_column_2() -> impl Scene {
                     ---
                     @subpane() Children [
                         @subpane_header() Children [
-                            @caption("Left"),
-                            @caption("Center"),
+                            @caption("Left");
+                            @caption("Center");
                             @caption("Right")
                         ]
                         ---
@@ -787,8 +787,9 @@ fn demo_column_2() -> impl Scene {
                             ---
                             @group() Children [
                                 @group_header() Children [
-                                    @caption("Group"),
-                                ],
+                                    @caption("Group")
+                                ];
+
                                 @group_body()
                                 Children [
                                     @label("A standard group")
@@ -935,24 +936,24 @@ fn demo_column_2() -> impl Scene {
             ---
             @subpane() Children [
                 @subpane_header() Children [
-                    @caption("List"),
+                    @caption("List")
                 ]
                 ---
                 @subpane_body() Children [
                     @FeathersListView {
                         @rows: {bsn_list![
-                            @FeathersListRow Children [@caption("First World")],
-                            @FeathersListRow Selected Children [@caption("Second Nature")],
-                            @FeathersListRow Children [@caption("Third Degree")],
-                            @FeathersListRow InteractionDisabled Children [@caption("Fourth Wall")],
-                            @FeathersListRow Children [@caption("Fifth Column")],
-                            @FeathersListRow Children [@caption("Sixth Sense")],
-                            @FeathersListRow Children [@caption("Seventh Heaven")],
-                            @FeathersListRow Children [@caption("Eighth Wonder")],
-                            @FeathersListRow Children [@caption("Ninth Inning")],
-                            @FeathersListRow Children [@caption("Tenth Amendment")],
-                            @FeathersListRow Children [@caption("Eleventh Hour")],
-                            @FeathersListRow Children [@caption("Twelfth Night")],
+                            @FeathersListRow Children [@caption("First World")];
+                            @FeathersListRow Selected Children [@caption("Second Nature")];
+                            @FeathersListRow Children [@caption("Third Degree")];
+                            @FeathersListRow InteractionDisabled Children [@caption("Fourth Wall")];
+                            @FeathersListRow Children [@caption("Fifth Column")];
+                            @FeathersListRow Children [@caption("Sixth Sense")];
+                            @FeathersListRow Children [@caption("Seventh Heaven")];
+                            @FeathersListRow Children [@caption("Eighth Wonder")];
+                            @FeathersListRow Children [@caption("Ninth Inning")];
+                            @FeathersListRow Children [@caption("Tenth Amendment")];
+                            @FeathersListRow Children [@caption("Eleventh Hour")];
+                            @FeathersListRow Children [@caption("Twelfth Night")];
                         ]}
                     }
                     Node {
@@ -1139,8 +1140,8 @@ fn spawn_quit_dialog(activate: On<Activate>, mut commands: Commands) {
                 @width: px(320),
                 @contents: bsn_list! {
                     @FeathersDialogHeader Children [
-                        @caption("Quit Feathers Gallery"),
-                        @FeathersDialogClose,
+                        @caption("Quit Feathers Gallery");
+                        @FeathersDialogClose;
                     ]
                     ---
                     @FeathersDialogBody Children [

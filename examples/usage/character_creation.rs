@@ -53,7 +53,7 @@ fn main() {
 
 fn setup(mut commands: Commands, character: Res<Character>) {
     commands.spawn_scene_list(bsn_list! {
-        Camera2d,
+        Camera2d;
 
         // This scene will serve as one half of our "View"
         // and most of the "Controller" in our MVC design.
@@ -61,11 +61,11 @@ fn setup(mut commands: Commands, character: Res<Character>) {
         // via observers and systems. The observers and systems update the
         // state and also update the look of the UI widgets
         // (i.e. changing text color of a selected option, inserting an X).
-        @ui(&character),
+        @ui(&character);
 
         // This scene will serve as the other half of our "View" in our MVC design.
         // The user will see the character they are creating.
-        @character_view(&character),
+        @character_view(&character);
     });
 }
 
@@ -279,15 +279,17 @@ fn age_slider_row(character: &Character) -> impl Scene {
             Node
             Children [
                 Text::new("Age:")
-            ],
-            @age_slider(character),
+            ];
+
+            @age_slider(character);
+
             Node {
                 width: px(30),
             }
             Children [
                 AgeSliderText
                 Text(format!("{}", age))
-            ],
+            ];
         ]
     }
 }
@@ -623,9 +625,9 @@ fn character_view(character: &Character) -> impl Scene {
         Transform::from_xyz(320., 0., 0.)
         Visibility::Inherited
         Children [
-            @character_sprite(&character),
-            @character_hat(&character),
-            @character_name_and_age(&character),
+            @character_sprite(&character);
+            @character_hat(&character);
+            @character_name_and_age(&character);
         ]
     }
 }
