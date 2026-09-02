@@ -13,7 +13,7 @@ use syn::{
     custom_punctuation, parenthesized,
     parse::{discouraged::Speculative, Parse, ParseBuffer, ParseStream},
     spanned::Spanned,
-    token::{At, Brace, Bracket, Colon, Comma, Dot, Paren, Tilde},
+    token::{At, Brace, Bracket, Colon, Comma, Dot, Paren, Semi, Tilde},
     Ident, Lit, LitStr, Member, Path, Result, Token,
 };
 
@@ -34,7 +34,7 @@ macro_rules! parse_punctuated_vec_autocomplete_friendly {
                 break;
             }
 
-            // Try parsing without a comma separator first. This makes autocomplete
+            // Try parsing without a separator first. This makes autocomplete
             // work in more places
             if !$input.is_empty() && !$input.peek($separator) {
                 let value = $input.parse::<$parse>()?;
@@ -83,7 +83,7 @@ impl<const ALLOW_FLAT: bool> Parse for Bsn<ALLOW_FLAT> {
                     ));
                 }
                 entries.push(entry);
-                if input.peek(Comma) || input.peek(ThreeMinus) {
+                if input.peek(Semi) || input.peek(ThreeMinus) {
                     // Not ideal, but this anticipatory break allows us to parse non-parenthesized
                     // flat Bsn entries in SceneLists
                     break;
@@ -232,32 +232,32 @@ impl Parse for BsnSceneListItems {
                 break;
             }
 
-            // Try parsing without a comma or --- separator first. This makes autocomplete
+            // Try parsing without a semicolon or --- separator first. This makes autocomplete
             // work in more places
-            if !input.is_empty() && !(input.peek(Comma) || input.peek(ThreeMinus)) {
+            if !input.is_empty() && !(input.peek(Semi) || input.peek(ThreeMinus)) {
                 let value = input.parse::<BsnSceneListItem>()?;
                 scenes.push(value);
             }
-            input.parse::<CommaOrThreeMinus>()?;
+            input.parse::<SemiOrThreeMinus>()?;
         }
 
-        parse_punctuated_vec_autocomplete_friendly!(scenes, input, BsnSceneListItem, Comma);
+        parse_punctuated_vec_autocomplete_friendly!(scenes, input, BsnSceneListItem, Semi);
         Ok(BsnSceneListItems(scenes))
     }
 }
 
-struct CommaOrThreeMinus;
+struct SemiOrThreeMinus;
 
-impl Parse for CommaOrThreeMinus {
+impl Parse for SemiOrThreeMinus {
     fn parse(input: ParseStream) -> Result<Self> {
-        if input.peek(Comma) {
-            let _ = input.parse::<Comma>()?;
-            Ok(CommaOrThreeMinus)
+        if input.peek(Semi) {
+            let _ = input.parse::<Semi>()?;
+            Ok(SemiOrThreeMinus)
         } else if input.peek(ThreeMinus) {
             let _ = input.parse::<ThreeMinus>()?;
-            Ok(CommaOrThreeMinus)
+            Ok(SemiOrThreeMinus)
         } else {
-            Err(input.error("Expected ',' or '---'"))
+            Err(input.error("Expected ';' or '---'"))
         }
     }
 }
