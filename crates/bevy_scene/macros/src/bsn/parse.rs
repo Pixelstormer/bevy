@@ -1,8 +1,8 @@
 use crate::_bsn::types::{
-    Bsn, BsnConstructor, BsnEntry, BsnFields, BsnFnArg, BsnFnArgs, BsnFnCall, BsnListRoot,
-    BsnNamedField, BsnNamedFieldOrStructUpdate, BsnRelatedSceneList, BsnRoot, BsnScene, BsnSceneFn,
-    BsnSceneList, BsnSceneListItem, BsnSceneListItems, BsnStructUpdate, BsnTuple, BsnType,
-    BsnUnnamedField, BsnValue,
+    Bsn, BsnConstructor, BsnEntry, BsnEntryDiagnostic, BsnFields, BsnFnArg, BsnFnArgs, BsnFnCall,
+    BsnListRoot, BsnNamedField, BsnNamedFieldOrStructUpdate, BsnRelatedSceneList, BsnRoot,
+    BsnScene, BsnSceneFn, BsnSceneList, BsnSceneListItem, BsnSceneListItemDiagnostic,
+    BsnSceneListItems, BsnStructUpdate, BsnTuple, BsnType, BsnUnnamedField, BsnValue, Diagnostic,
 };
 use bevy_macro_utils::{path_to_string, PathType};
 use proc_macro2::{Delimiter, TokenStream, TokenTree};
@@ -71,7 +71,10 @@ impl<const ALLOW_FLAT: bool> Parse for Bsn<ALLOW_FLAT> {
                         "Caching entries after the first is not supported, remove the ':' prefix or make this the first entry.",
                     ));
                 }
-                entries.push(entry);
+                entries.push(BsnEntryDiagnostic {
+                    entry,
+                    diagnostic: None,
+                });
             }
         } else if ALLOW_FLAT {
             while !input.is_empty() {
@@ -82,15 +85,25 @@ impl<const ALLOW_FLAT: bool> Parse for Bsn<ALLOW_FLAT> {
                         "Caching entries after the first is not supported, remove the ':' prefix or make this the first entry.",
                     ));
                 }
-                entries.push(entry);
-                if input.peek(Semi) || input.peek(ThreeMinus) {
+
+                let diagnostic = input.peek(Comma).then(|| Diagnostic::Deprecated {
+                    name: Ident::new("comma_separator", input.span()),
+                    note: "Using , as an entity separator will become a hard error in the future. Use ; or --- instead.".to_string(),
+                    span: Some(input.span()),
+                });
+                entries.push(BsnEntryDiagnostic { entry, diagnostic });
+
+                if input.peek(Comma) || input.peek(Semi) || input.peek(ThreeMinus) {
                     // Not ideal, but this anticipatory break allows us to parse non-parenthesized
                     // flat Bsn entries in SceneLists
                     break;
                 }
             }
         } else {
-            entries.push(BsnEntry::parse(input)?);
+            entries.push(BsnEntryDiagnostic {
+                entry: BsnEntry::parse(input)?,
+                diagnostic: None,
+            });
         }
 
         Ok(Self { entries })
@@ -227,34 +240,64 @@ impl Parse for BsnSceneListItems {
             if input.is_empty() {
                 break;
             }
-            let value = input.parse::<BsnSceneListItem>()?;
-            scenes.push(value);
+            let item = input.parse::<BsnSceneListItem>()?;
+
             if input.is_empty() {
+                scenes.push(BsnSceneListItemDiagnostic {
+                    item,
+                    diagnostic: None,
+                });
                 break;
             }
 
             // Try parsing without a semicolon or --- separator first. This makes autocomplete
             // work in more places
-            if !input.is_empty() && !(input.peek(Semi) || input.peek(ThreeMinus)) {
-                let value = input.parse::<BsnSceneListItem>()?;
-                scenes.push(value);
+            if !(input.peek(Comma) || input.peek(Semi) || input.peek(ThreeMinus)) {
+                scenes.push(BsnSceneListItemDiagnostic {
+                    item,
+                    diagnostic: None,
+                });
+
+                let item = input.parse::<BsnSceneListItem>()?;
+                match input.parse::<SemiOrThreeMinus>() {
+                    Ok(SemiOrThreeMinus(diagnostic)) => {
+                        scenes.push(BsnSceneListItemDiagnostic { item, diagnostic })
+                    }
+                    Err(e) => {
+                        scenes.push(BsnSceneListItemDiagnostic {
+                            item,
+                            diagnostic: None,
+                        });
+                        return Err(e);
+                    }
+                }
+            } else {
+                let SemiOrThreeMinus(diagnostic) = input.parse::<SemiOrThreeMinus>()?;
+                scenes.push(BsnSceneListItemDiagnostic { item, diagnostic });
             }
-            input.parse::<SemiOrThreeMinus>()?;
         }
         Ok(BsnSceneListItems(scenes))
     }
 }
 
-struct SemiOrThreeMinus;
+struct SemiOrThreeMinus(Option<Diagnostic>);
 
 impl Parse for SemiOrThreeMinus {
     fn parse(input: ParseStream) -> Result<Self> {
-        if input.peek(Semi) {
+        if input.peek(Comma) {
+            let diagnostic = Diagnostic::Deprecated {
+                name: Ident::new("comma_separator", input.span()),
+                note: "Using , as an entity separator will become a hard error in the future. Use ; or --- instead.".to_string(),
+                span: Some(input.span()),
+            };
+            let _ = input.parse::<Comma>()?;
+            Ok(SemiOrThreeMinus(Some(diagnostic)))
+        } else if input.peek(Semi) {
             let _ = input.parse::<Semi>()?;
-            Ok(SemiOrThreeMinus)
+            Ok(SemiOrThreeMinus(None))
         } else if input.peek(ThreeMinus) {
             let _ = input.parse::<ThreeMinus>()?;
-            Ok(SemiOrThreeMinus)
+            Ok(SemiOrThreeMinus(None))
         } else {
             Err(input.error("Expected ';' or '---'"))
         }

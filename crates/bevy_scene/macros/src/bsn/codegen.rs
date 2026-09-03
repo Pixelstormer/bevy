@@ -1,11 +1,12 @@
 use crate::_bsn::types::{
-    Bsn, BsnConstructor, BsnEntry, BsnFields, BsnFnArg, BsnFnArgs, BsnFnCall, BsnListRoot,
-    BsnNamedField, BsnRelatedSceneList, BsnRoot, BsnScene, BsnSceneFn, BsnSceneListItem,
-    BsnSceneListItems, BsnStructUpdate, BsnType, BsnUnnamedField, BsnValue,
+    Bsn, BsnConstructor, BsnEntry, BsnEntryDiagnostic, BsnFields, BsnFnArg, BsnFnArgs, BsnFnCall,
+    BsnListRoot, BsnNamedField, BsnRelatedSceneList, BsnRoot, BsnScene, BsnSceneFn,
+    BsnSceneListItem, BsnSceneListItems, BsnStructUpdate, BsnType, BsnUnnamedField, BsnValue,
+    Diagnostic,
 };
 use bevy_macro_utils::{fq_std::FQDefault, path_to_string};
-use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use proc_macro2::{Span, TokenStream};
+use quote::{format_ident, quote, quote_spanned, ToTokens};
 use std::collections::{hash_map::Entry, HashMap, HashSet};
 use syn::{parse::Parse, ExprTuple, Ident, Lit, Member, Path};
 
@@ -63,6 +64,7 @@ pub(crate) struct BsnCodegenCtx<'a> {
     pub entity_refs: &'a mut EntityRefs,
     pub hoisted_expressions: &'a mut HoistedExpressions,
     /// Accumulated parsing and validation errors.
+    pub diagnostics: Vec<Diagnostic>,
     pub errors: Vec<syn::Error>,
 }
 impl<'a> BsnCodegenCtx<'a> {
@@ -79,6 +81,7 @@ pub trait BsnTokenStream: Parse {
 impl BsnTokenStream for BsnRoot {
     fn to_tokens(&self, ctx: &mut BsnCodegenCtx) -> TokenStream {
         let tokens = self.0.to_tokens(ctx);
+        let diagnostics = ctx.diagnostics.iter().map(|d| d.to_tokens());
         let errors = ctx.errors.iter().map(|e| e.to_compile_error());
         let bevy_scene = ctx.bevy_scene;
         let hoisted_exprs = ctx.hoisted_expressions.expressions.drain(..);
@@ -100,6 +103,7 @@ impl BsnTokenStream for BsnRoot {
                 #call_id
                 #(#hoisted_exprs)*
                 let _res = #tokens;
+                #(#diagnostics)*
                 #(#errors)*
                 _res
             })
@@ -110,6 +114,7 @@ impl BsnTokenStream for BsnRoot {
 impl BsnTokenStream for BsnListRoot {
     fn to_tokens(&self, ctx: &mut BsnCodegenCtx) -> TokenStream {
         let tokens = self.0.to_tokens(ctx);
+        let diagnostics = ctx.diagnostics.iter().map(|d| d.to_tokens());
         let errors = ctx.errors.iter().map(|e| e.to_compile_error());
         let bevy_scene = ctx.bevy_scene;
         let hoisted_exprs = ctx.hoisted_expressions.expressions.drain(..);
@@ -131,6 +136,7 @@ impl BsnTokenStream for BsnListRoot {
                 #call_id
                 #(#hoisted_exprs)*
                 let _res = #bevy_scene::SceneListScope(#tokens);
+                #(#diagnostics)*
                 #(#errors)*
                 _res
             }
@@ -146,6 +152,9 @@ impl<const ALLOW_FLAT: bool> Bsn<ALLOW_FLAT> {
         let mut combined_patches = Vec::new();
         let mut scene_impls = Vec::new();
         for entry in &self.entries {
+            if let Some(diagnostic) = &entry.diagnostic {
+                ctx.diagnostics.push(diagnostic.clone());
+            }
             match entry.try_to_tokens(ctx) {
                 Ok(EntryResult::CombinedSceneFunction(patch)) => combined_patches.push(patch),
                 Ok(EntryResult::NewSceneImpl(scene_impl)) => {
@@ -179,9 +188,26 @@ impl<const ALLOW_FLAT: bool> Bsn<ALLOW_FLAT> {
     }
 }
 
+impl Diagnostic {
+    fn to_tokens(&self) -> TokenStream {
+        match self {
+            Self::Deprecated { name, note, span } => {
+                let span = span.unwrap_or_else(Span::call_site);
+                quote_spanned!(span=> { #[deprecated(note = #note)] macro_rules! #name { () => {} } #name!(); } )
+            }
+        }
+    }
+}
+
 enum EntryResult {
     CombinedSceneFunction(TokenStream),
     NewSceneImpl(TokenStream),
+}
+
+impl BsnEntryDiagnostic {
+    fn try_to_tokens(&self, ctx: &mut BsnCodegenCtx) -> syn::Result<EntryResult> {
+        self.entry.try_to_tokens(ctx)
+    }
 }
 
 impl BsnEntry {
@@ -752,12 +778,17 @@ impl ToTokens for BsnStructUpdate {
 impl BsnTokenStream for BsnSceneListItems {
     fn to_tokens(&self, ctx: &mut BsnCodegenCtx) -> TokenStream {
         let bevy_scene = ctx.bevy_scene;
-        let scenes = self.0.iter().map(|s| match s {
-            BsnSceneListItem::Scene(bsn) => {
-                let tokens = bsn.to_tokens(ctx);
-                quote! {#bevy_scene::EntityScene(#tokens)}
+        let scenes = self.0.iter().map(|s| {
+            if let Some(diagnostic) = &s.diagnostic {
+                ctx.diagnostics.push(diagnostic.clone());
             }
-            BsnSceneListItem::Expression(tokens) => tokens.clone(),
+            match &s.item {
+                BsnSceneListItem::Scene(bsn) => {
+                    let tokens = bsn.to_tokens(ctx);
+                    quote! {#bevy_scene::EntityScene(#tokens)}
+                }
+                BsnSceneListItem::Expression(tokens) => tokens.clone(),
+            }
         });
 
         quote! { #bevy_scene::auto_nest_tuple!(#(#scenes),*) }
@@ -882,6 +913,7 @@ mod tests {
                 entity_refs: refs,
                 invocation_index: parse_quote!(("", 0, 0)),
                 hoisted_expressions,
+                diagnostics: Vec::new(),
                 errors: Vec::new(),
             }
         }

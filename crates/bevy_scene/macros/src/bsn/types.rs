@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use syn::{Ident, Lit, LitStr, Member, Path};
 
 #[derive(Debug)]
@@ -9,7 +9,22 @@ pub struct BsnListRoot(pub BsnSceneListItems);
 
 #[derive(Debug)]
 pub struct Bsn<const ALLOW_FLAT: bool> {
-    pub entries: Vec<BsnEntry>,
+    pub entries: Vec<BsnEntryDiagnostic>,
+}
+
+#[derive(Debug, Clone)]
+pub enum Diagnostic {
+    Deprecated {
+        name: Ident,
+        note: String,
+        span: Option<Span>,
+    },
+}
+
+#[derive(Debug)]
+pub struct BsnEntryDiagnostic {
+    pub entry: BsnEntry,
+    pub diagnostic: Option<Diagnostic>,
 }
 
 #[derive(Debug)]
@@ -54,7 +69,13 @@ pub struct BsnRelatedSceneList {
 pub struct BsnSceneList(pub BsnSceneListItems);
 
 #[derive(Debug)]
-pub struct BsnSceneListItems(pub Vec<BsnSceneListItem>);
+pub struct BsnSceneListItems(pub Vec<BsnSceneListItemDiagnostic>);
+
+#[derive(Debug)]
+pub struct BsnSceneListItemDiagnostic {
+    pub item: BsnSceneListItem,
+    pub diagnostic: Option<Diagnostic>,
+}
 
 #[derive(Debug)]
 pub enum BsnSceneListItem {
