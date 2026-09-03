@@ -211,6 +211,7 @@ impl BsnEntry {
         })
     }
 }
+
 impl Parse for BsnSceneList {
     fn parse(input: ParseStream) -> Result<Self> {
         let content;
@@ -240,8 +241,6 @@ impl Parse for BsnSceneListItems {
             }
             input.parse::<SemiOrThreeMinus>()?;
         }
-
-        parse_punctuated_vec_autocomplete_friendly!(scenes, input, BsnSceneListItem, Semi);
         Ok(BsnSceneListItems(scenes))
     }
 }
