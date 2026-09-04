@@ -88,7 +88,7 @@ impl<const ALLOW_FLAT: bool> Parse for Bsn<ALLOW_FLAT> {
 
                 let diagnostic = input.peek(Comma).then(|| Diagnostic::Deprecated {
                     name: Ident::new("comma_separator", input.span()),
-                    note: "Using , as an entity separator is discouraged due to poor readability. Use ; or --- instead.".to_string(),
+                    note: "Using , as an entity separator is discouraged due to poor readability. Use semicolons with newlines:\nbsn! {\n\tA;\n\n\tB\n}\nor 'triple minus':\nbsn! {\n\tA\n\t---\n\tB\n}\ninstead.".to_string(),
                     span: Some(input.span()),
                 });
                 entries.push(BsnEntryDiagnostic { entry, diagnostic });
@@ -287,7 +287,7 @@ impl Parse for SemiOrThreeMinus {
         if input.peek(Comma) {
             let diagnostic = Diagnostic::Deprecated {
                 name: Ident::new("comma_separator", input.span()),
-                note: "Using , as an entity separator is discouraged due to poor readability. Use ; or --- instead.".to_string(),
+                note: "Using , as an entity separator is discouraged due to poor readability. Use semicolons with newlines:\nbsn! {\n\tA;\n\n\tB\n}\nor 'triple minus':\nbsn! {\n\tA\n\t---\n\tB\n}\ninstead.".to_string(),
                 span: Some(input.span()),
             };
             let _ = input.parse::<Comma>()?;
