@@ -110,9 +110,9 @@
 //!
 //! ## Entity Hierarchies and Relationships
 //!
-//! Use `Children [scene1, scene2]` inside [`bsn!`] to spawn child entities.
-//! [`Children`] (and entities within [`bsn_list!`]) are separated by commas;
-//! add multiple components to the same entity by listing them without a comma:
+//! Use `Children [ scene1; scene2 ]` inside [`bsn!`] to spawn child entities.
+//! [`Children`] (and entities within [`bsn_list!`]) are separated by semicolons;
+//! add multiple components to the same entity by listing them without a semicolon:
 //!
 //! ```ignore
 //! // Spawns one child entity with components A, B and C
@@ -169,7 +169,7 @@
 //!             #GrandChild2
 //!           )
 //!        ]
-//!      ),
+//!      )
 //!   ]
 //! }
 //! ```

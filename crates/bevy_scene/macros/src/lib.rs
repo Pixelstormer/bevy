@@ -70,10 +70,10 @@ use syn::{parse_macro_input, DeriveInput};
 ///
 /// | Example                      | Meaning                                                                                                               |
 /// | ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-/// | `[ #Child1 CompA, #Child2 ]`     | Spawns 2 children, one with `(Name("Child1"), CompA::default())` and the other with `Name("Child2")`              |
-/// | `[ (#Child1 CompA), (#Child2) ]` | Same as above, with explicit parentheses                                                                          |
-/// | `[ #First, { expr }, #Last ]`   | Spawns an entity with name `First`, then every entity from the [`SceneList`] returned by expr, then one named `Last` |
-/// | `[ #First, ({ expr }), #Last ]` | Same as above, but the `expr` should result in a [`Scene`] and will only spawn one entity using it                   |
+/// | `[ #Child1 CompA; #Child2 ]`     | Spawns 2 children, one with `(Name("Child1"), CompA::default())` and the other with `Name("Child2")`              |
+/// | `[ (#Child1 CompA); (#Child2) ]` | Same as above, with explicit parentheses                                                                          |
+/// | `[ #First; { expr }; #Last ]`   | Spawns an entity with name `First`, then every entity from the [`SceneList`] returned by expr, then one named `Last` |
+/// | `[ #First; ({ expr }); #Last ]` | Same as above, but the `expr` should result in a [`Scene`] and will only spawn one entity using it                   |
 ///
 /// ### Values
 ///
@@ -129,13 +129,14 @@ use syn::{parse_macro_input, DeriveInput};
 ///     })
 ///     Children [                   // spawning multiple related entities using a RelationshipTarget component
 ///         #Child1 ComponentA       // whitespace doesn't have to be newlines
-///         ,                        // entities are comma-separated
-///         (@other_scene() #Child3), // parentheses around a single entity are optional
-///         Link(#SomeName),         // passing a entity reference to a component as `Entity`, component has to implement FromTemplate
+///         ;                        // entities are semicolon-separated
+///         (@other_scene() #Child3); // parentheses around a single entity are optional
+///         Link(#SomeName);         // passing a entity reference to a component as `Entity`, component has to implement FromTemplate
 ///         @MySceneComponent {      // components which derive SceneComponent have scenes and can be inherited from
 ///             @some_prop: 3,       // props, look like fields prefixed with @ but end up passed to the components scene as arguments
 ///             normal_field: 5      // while normal fields are the actual fields of the component
-///         },
+///         }
+///         ---                      // --- can also be used to separate entities
 ///         (
 ///             Node {
 ///                 width: some_var      // you can directly use variables without {}
@@ -144,12 +145,12 @@ use syn::{parse_macro_input, DeriveInput};
 ///             @Container {
 ///                 @items: {
 ///                     bsn_list![                // sometimes you may need to nest macro calls
-///                         #Item1 SomeComponent, // note: the name #item1 here is in its own scope
+///                         #Item1 SomeComponent; // note: the name #item1 here is in its own scope
 ///                         @some_scene() #Item2
 ///                     ]
 ///                 }
 ///             }
-///         ),
+///         )
 ///     ]
 /// };
 /// ```
